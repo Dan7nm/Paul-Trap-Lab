@@ -18,11 +18,10 @@ z_mm = y_px / PX_PER_MM
 
 time = np.int32(data['Timepoint'].values)/ FPS
 
-# Define sine function with second harmonic for fitting
-def sine_func(t, A1, freq, phase1, A2, phase2, offset):
-    """Sine wave with fundamental and second harmonic"""
-    return (A1 * np.sin(2 * np.pi * freq * t + phase1) + 
-            A2 * np.sin(2 * np.pi * 2*freq * t + phase2) + offset)
+# Define simple sine function for fitting
+def sine_func(t, A, omega, phi, offset):
+    """Simple sine wave: A*sin(omega*t + phi) + offset"""
+    return A * np.sin(omega * t + phi) + offset
 
 # Use FFT to get better initial guesses
 from scipy.fft import fft, fftfreq
@@ -36,43 +35,39 @@ xf = fftfreq(N, dt)
 idx = np.argmax(np.abs(yf[1:N//2])) + 1
 freq_guess = abs(xf[idx])
 
-# Find second harmonic amplitude
-idx2 = np.argmin(np.abs(xf - 2*freq_guess))
-A2_guess = 2 * np.abs(yf[idx2]) / N
-phase2_guess = np.angle(yf[idx2])
-
 # Initial parameter guesses
 A_guess = (np.max(z_mm) - np.min(z_mm)) / 2
 offset_guess = np.mean(z_mm)
-phase_guess = np.angle(yf[idx])
+phi_guess = np.angle(yf[idx])
+omega_guess = 2 * np.pi * freq_guess
 
 print(f"Initial guesses from FFT:")
 print(f"  Frequency: {freq_guess:.2f} Hz")
-print(f"  Amplitude 1: {A_guess:.4f} mm")
-print(f"  Amplitude 2: {A2_guess:.4f} mm")
-print(f"  Phase 1: {phase_guess:.4f} rad")
+print(f"  Omega: {omega_guess:.2f} rad/s")
+print(f"  Amplitude: {A_guess:.4f} mm")
+print(f"  Phase: {phi_guess:.4f} rad")
 
-p0 = [A_guess, freq_guess, phase_guess, A2_guess, phase2_guess, offset_guess]
+p0 = [A_guess, omega_guess, phi_guess, offset_guess]
 
 # Set bounds for fitting
-bounds = ([0, freq_guess*0.9, -2*np.pi, -A_guess, -2*np.pi, offset_guess-0.1], 
-          [A_guess*2, freq_guess*1.1, 2*np.pi, A_guess, 2*np.pi, offset_guess+0.1])
+bounds = ([0, omega_guess*0.9, -2*np.pi, offset_guess-0.1], 
+          [A_guess*2, omega_guess*1.1, 2*np.pi, offset_guess+0.1])
 
 # Perform the fit
 popt, pcov = curve_fit(sine_func, time, z_mm, p0=p0, bounds=bounds, maxfev=10000)
-A1_fit, freq_fit, phase1_fit, A2_fit, phase2_fit, offset_fit = popt
+A_fit, omega_fit, phi_fit, offset_fit = popt
 
 # Generate fitted curve
 time_fit = np.linspace(time.min(), time.max(), 1000)
 z_fit = sine_func(time_fit, *popt)
 
 # Print fit parameters
+freq_fit = omega_fit / (2 * np.pi)
 print(f"\nFitted Parameters:")
-print(f"  Amplitude (fundamental): {A1_fit:.4f} mm")
-print(f"  Amplitude (2nd harmonic): {A2_fit:.4f} mm")
+print(f"  Amplitude: {A_fit:.4f} mm")
+print(f"  Omega: {omega_fit:.4f} rad/s")
 print(f"  Frequency: {freq_fit:.4f} Hz")
-print(f"  Phase 1: {phase1_fit:.4f} rad")
-print(f"  Phase 2: {phase2_fit:.4f} rad")
+print(f"  Phase: {phi_fit:.4f} rad")
 print(f"  Offset: {offset_fit:.4f} mm")
 
 # Calculate residuals
