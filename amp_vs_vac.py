@@ -44,20 +44,22 @@ def plot_A_vs_Vac():
     plt.savefig('amplitude_vs_vac.png')
     plt.show()
 
-def plot_A_vs_Vdc():
-    data_dir = 'data/changing Vdc 3570 Vac 1_1'
+def plot_A_vs_Vdc(data_dir, data_col):
     data = []
     for path in os.listdir(data_dir):
-        _, y = extract_data(data_dir + "/" + path)
+        _, y = extract_data(data_dir + os.sep + path, data_col)
         amplitude = y.values.std()
+        position_average = y.values.mean()
         v = int(path.split('_')[1]) # file format is dc_{v_value}_fps_240.csv
-        data.append((v, amplitude))
+        data.append((v, amplitude, position_average))
     data.sort(key=lambda x: x[0])
-    voltages, amplitudes = zip(*data)
-    plt.plot(voltages, amplitudes, 'o-')
+    voltages, amplitudes, pos_averages = zip(*data)
+    plt.plot(voltages, amplitudes, 'o-', label='Amplitude')
+    plt.plot(voltages, pos_averages, 'o-', label='Position Average')
     plt.xlabel('V_dc Amplitude (V)')
     plt.ylabel('Amplitude (pixels)')
     plt.grid(True)
+    plt.legend()
     plt.savefig('amplitude_vs_vdc.png')
     plt.show()
 
@@ -87,6 +89,4 @@ if __name__ == "__main__":
     # folder = vdc_dir2
     # for file in os.listdir(folder):
     #     plot_motion(os.path.join(folder, file), R_DATA_COL_NAME)
-
-    plot_motion(os.path.join(vdc_dir2, "dc_358_fps_240.csv"), Z_DATA_COL_NAME)
-    plot_motion(os.path.join(vdc_dir2, "dc_358_fps_240.csv"), R_DATA_COL_NAME)
+    plot_A_vs_Vdc(vdc_dir2, Z_DATA_COL_NAME)
