@@ -5,24 +5,27 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 # Constants
-X_DATA_COL_NAME = "X pos"
-Y_DATA_COL_NAME = "Y pos"
+R_DATA_COL_NAME = "X pos"
+Z_DATA_COL_NAME = "Y pos"
+
 TIME_COL_NAME = "Time"
 PX_PER_MM = 75.0
 FPS = 240
 
-
-def create_df(path: str) -> pd.DataFrame:
+def extract_data(path: str, data_col) -> pd.DataFrame:
     df = pd.read_csv(path)
-    # Ensure we don't crash if columns are missing or empty
-    res = df[df[Y_DATA_COL_NAME] != 0]
-    return res
+    df = df.sort_values([TIME_COL_NAME])
+    if data_col == R_DATA_COL_NAME:
+        mask = (df[data_col] > 20) & (df[data_col] < 180)
+    else:
+        mask = df[data_col] > 20
+    df = df[mask]
+    return df[TIME_COL_NAME], df[data_col]
 
 
 def fft_z(file_path, fps, plot=False, save=False):
-    data = create_df(file_path)
+    _, y_px = extract_data(file_path, Z_DATA_COL_NAME)
 
-    y_px = data[Y_DATA_COL_NAME].values
     z_mm = y_px / PX_PER_MM
     z_centered = z_mm - np.mean(z_mm)
 
@@ -38,7 +41,7 @@ def fft_z(file_path, fps, plot=False, save=False):
         # --- PLOTTING SECTION DISABLED FOR BATCH PROCESSING ---
         plt.figure(figsize=(10, 6))
         plt.plot(pos_freqs, pos_amps)
-        plt.title('Fourier Transform of z_centered')
+        plt.title(f"z - {file_path.split(os.sep)[-1]}")
         plt.grid(True)
         if save:
             plt.savefig(file_path + '_fft_z.png', dpi=200)
@@ -49,9 +52,7 @@ def fft_z(file_path, fps, plot=False, save=False):
 
 
 def fft_r(file_path, fps, plot=False, save=False):
-    data = create_df(file_path)
-
-    x_px = data[X_DATA_COL_NAME].values
+    _, x_px = extract_data(file_path, R_DATA_COL_NAME)
     r_mm = x_px / PX_PER_MM
     r_centered = r_mm - np.mean(r_mm)
 
@@ -68,7 +69,7 @@ def fft_r(file_path, fps, plot=False, save=False):
         # --- PLOTTING SECTION DISABLED FOR BATCH PROCESSING ---
         plt.figure(figsize=(10, 6))
         plt.plot(pos_freqs, pos_amps)
-        plt.title('Fourier Transform of r_centered')
+        plt.title(f"r - {file_path.split(os.sep)[-1]}")
         plt.grid(True)
         if save:
             plt.savefig(file_path + '_fft_r.png', dpi=200)
@@ -121,7 +122,7 @@ def avarage_all(data_dir, fft_function, bad_files:List[str], plot:bool=False):
     plt.plot(common_freqs, avg_intensity, color='purple', label=f'Averaged Spectrum in {domain}')
     plt.xlabel('Frequency (Hz)')
     plt.ylabel('Average Amplitude')
-    plt.title(f'Averaged FFT Spectrum (N={valid_files_count})')
+    plt.title(f'Averaged FFT Spectrum in {domain} (N={valid_files_count})')
     plt.legend()
     plt.grid(True)
     plt.show()
