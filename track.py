@@ -1,9 +1,11 @@
+import os.path
+
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
 
-FILENAME = 'data/240hz_1800V'
+FILENAME = os.path.join("data", "Changing Vac 0 Vdc", "240hz_1800V")
 
 data = pd.read_csv(FILENAME + '.csv')
 
