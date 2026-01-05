@@ -1,6 +1,5 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from scipy.stats import alpha
 
 
 def trap_solver(m,q,V0,Omega,r0,g,gamma1,gamma2,dt,T,x0,vx0):

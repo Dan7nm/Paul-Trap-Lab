@@ -14,7 +14,7 @@ ac_voltage_to_file = {
 dc_values = [0, 30, 75, 150, 275, 300, 372, 450, 520, 600]
 DC_DIR = r"data/changing Vdc 3600V ac"
 AC_DIR = r"data/Changing Vac 0 Vdc"
-bad_measurements = ["dc_0_fps_240.csv", "dc_600_fps_240.csv"]
+bad_measurements = ["dc_0_fps_240.csv", "dc_600_fps_240.csv", "51hz_2940v_track.csv"]
 
 
 def plot_A_vs_Vac():
@@ -50,6 +50,7 @@ def plot_A_vs_Vdc(data_dir, data_col):
         data.append((v, amplitude, position_average))
     data.sort(key=lambda x: x[0])
     voltages, amplitudes, pos_averages = zip(*data)
+    f = np.poly1d(np.polyfit(voltages, pos_averages, 1))
     plt.plot(voltages, amplitudes, 'o-', label='Amplitude')
     plt.plot(voltages, pos_averages, 'o-', label='Position Average')
     plt.xlabel('V_dc Amplitude (V)')
@@ -58,13 +59,10 @@ def plot_A_vs_Vdc(data_dir, data_col):
     plt.legend()
     plt.savefig('amplitude_vs_vdc.png')
     plt.show()
+    print(f)
 
 def plot_motion(file_path, col_name):
     t, x = extract_data(file_path, col_name)
-    # start = 3000
-    # stop = 3150
-    # x = x[(t > start) & (t < stop)]
-    # t = t[(t > start) & (t < stop)]
     plt.plot(t, x)
     plt.xlabel('Time (s)')
     plt.ylabel(col_name)
@@ -82,7 +80,4 @@ vdc_dir1 = os.path.join('data', "changing Vdc 3600V ac")
 vdc_dir2 = os.path.join('data', 'changing Vdc 3570 Vac 1_1')
 
 if __name__ == "__main__":
-    # folder = vdc_dir2
-    # for file in os.listdir(folder):
-    #     plot_motion(os.path.join(folder, file), R_DATA_COL_NAME)
     plot_A_vs_Vdc(vdc_dir2, Z_DATA_COL_NAME)

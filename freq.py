@@ -12,7 +12,8 @@ TIME_COL_NAME = "Time"
 PX_PER_MM = 75.0
 FPS = 240
 
-def extract_data(path: str, data_col) -> pd.DataFrame:
+
+def extract_data(path: str, data_col, calibration_ratio=None) -> Tuple[np.ndarray, np.ndarray]:
     df = pd.read_csv(path)
     df = df.sort_values([TIME_COL_NAME])
     if data_col == R_DATA_COL_NAME:
@@ -20,6 +21,9 @@ def extract_data(path: str, data_col) -> pd.DataFrame:
     else:
         mask = df[data_col] > 20
     df = df[mask]
+    df[TIME_COL_NAME] /= FPS
+    if calibration_ratio is not None:
+        df[data_col] /= calibration_ratio
     return df[TIME_COL_NAME], df[data_col]
 
 
