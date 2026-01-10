@@ -79,5 +79,8 @@ vac_dir = os.path.join('data', 'Changing Vac 0 Vdc')
 vdc_dir1 = os.path.join('data', "changing Vdc 3600V ac")
 vdc_dir2 = os.path.join('data', 'changing Vdc 3570 Vac 1_1')
 
+
 if __name__ == "__main__":
-    plot_A_vs_Vdc(vdc_dir2, Z_DATA_COL_NAME)
+    p1_path = "data/changing Vdc 3570 Vac 1_1/dc_132_fps_240.csv"
+    p2_path = "data/two particles /dc_0_ac_3560_240fps_particle2.csv"
+    fft_r(p1_path, FPS,plot=True)
