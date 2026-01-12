@@ -95,7 +95,7 @@ def avarage_all(data_dir, fft_function, bad_files:List[str], plot:bool=False):
 
     valid_files_count = 0
     for file in files:
-        if file in bad_files:
+        if file in bad_files or not file.endswith('.csv'):
             continue
         file_path = os.path.join(data_dir, file)
 

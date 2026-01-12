@@ -1,3 +1,4 @@
+from typing import Any
 from freq import *
 
 
@@ -15,54 +16,46 @@ dc_values = [0, 30, 75, 150, 275, 300, 372, 450, 520, 600]
 DC_DIR = r"data/changing Vdc 3600V ac"
 AC_DIR = r"data/Changing Vac 0 Vdc"
 bad_measurements = ["dc_0_fps_240.csv", "dc_600_fps_240.csv", "51hz_2940v_track.csv"]
+SEPARATED_AC_FORMAT = 3
+SEPARATED_DC_FORMAT = 1
 
-
-def plot_A_vs_Vac():
-    # Extract amplitude data for each voltage
-    voltages = []
-    amplitudes = []
-
-    for voltage, filename in sorted(ac_voltage_to_file.items()):
-        # Load and filter data (keep only positive positions)
-        _, a = extract_data("data/Changing Vac 0 Vdc/" + filename, Z_DATA_COL_NAME)
-
-        # Calculate amplitude as half the peak-to-peak range
-        # amplitude = (df['Y pos'].max() - df['Y pos'].min()) / 2
-        amplitude = np.sqrt(2) * a.std()
-        voltages.append(voltage)
-        amplitudes.append(amplitude)
-
-    # Plot amplitude vs voltage
-    plt.plot(voltages, amplitudes, 'o-')
-    plt.xlabel('V_ac Amplitude (V)')
-    plt.ylabel('Amplitude (pixels)')
-    plt.grid(True)
-    plt.savefig('amplitude_vs_vac.png')
-    plt.show()
-
-def plot_A_vs_Vdc(data_dir, data_col):
+def _extract_v_A_pos_from_dir(data_dir, data_col, sep_index) -> tuple[Any, Any, Any]:
     data = []
     for path in os.listdir(data_dir):
+        if not path.endswith('.csv'): continue
         _, y = extract_data(data_dir + os.sep + path, data_col)
         amplitude = y.values.std()
         position_average = y.values.mean()
-        v = int(path.split('_')[1]) # file format is dc_{v_value}_fps_240.csv
+        v = int(path.split('_')[sep_index])  # file format is dc_{v_value}_fps_240.csv
         data.append((v, amplitude, position_average))
     data.sort(key=lambda x: x[0])
     voltages, amplitudes, pos_averages = zip(*data)
-    f = np.poly1d(np.polyfit(voltages, pos_averages, 1))
-    plt.plot(voltages, amplitudes, 'o-', label='Amplitude')
+    return voltages, amplitudes, pos_averages
+
+def plot(voltages, pos_averages, xlabel, ylabel):
     plt.plot(voltages, pos_averages, 'o-', label='Position Average')
-    plt.xlabel('V_dc Amplitude (V)')
-    plt.ylabel('Amplitude (pixels)')
+    plt.xlabel(xlabel)
+    plt.ylabel(ylabel)
     plt.grid(True)
     plt.legend()
-    plt.savefig('amplitude_vs_vdc.png')
     plt.show()
-    print(f)
+
+def plot_A_vs_Vac(data_dir, data_col):
+    voltages, amplitudes, pos_averages = _extract_v_A_pos_from_dir(data_dir, data_col, SEPARATED_AC_FORMAT)
+    plot(voltages, pos_averages, 'V_ac Amplitude (V)', 'Position Average')
+    plot(voltages, amplitudes, 'V_ac Amplitude (V)', 'Amplitudes')
+
+def plot_A_vs_Vdc(data_dir, data_col):
+    voltages, amplitudes, pos_averages = _extract_v_A_pos_from_dir(data_dir, data_col, SEPARATED_DC_FORMAT)
+    plot(voltages, pos_averages, 'V_dc Amplitude (V)', 'Position Average')
+    plot(voltages, amplitudes, 'V_dc Amplitude (V)', 'Amplitudes')
+
 
 def plot_motion(file_path, col_name):
     t, x = extract_data(file_path, col_name)
+    mask = (t > 5) & (t < 7)
+    t = t[mask]
+    x = x[mask]
     plt.plot(t, x)
     plt.xlabel('Time (s)')
     plt.ylabel(col_name)
@@ -75,12 +68,12 @@ def plot_all_fft_averages():
     avarage_all(data_dir, fft_r, bad_measurements, plot=True)
 
 
-vac_dir = os.path.join('data', 'Changing Vac 0 Vdc')
+vac_dir1 = os.path.join('data', 'Changing Vac 0 Vdc')
+vac_dir2 = os.path.join("data", "psp dc 0")
 vdc_dir1 = os.path.join('data', "changing Vdc 3600V ac")
 vdc_dir2 = os.path.join('data', 'changing Vdc 3570 Vac 1_1')
 
 
+
 if __name__ == "__main__":
-    p1_path = "data/changing Vdc 3570 Vac 1_1/dc_132_fps_240.csv"
-    p2_path = "data/two particles /dc_0_ac_3560_240fps_particle2.csv"
-    fft_r(p1_path, FPS,plot=True)
+    plot_motion(r"data/two particles/dc_0_ac_3560_240fps_particle2.csv", Z_DATA_COL_NAME)
