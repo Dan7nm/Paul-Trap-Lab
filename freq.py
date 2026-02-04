@@ -155,3 +155,34 @@ def average_and_median_all(data_dir, fft_function, fps,bad_files: List[str], plo
     plt.show()
 
     return common_freqs, avg_intensity, median_intensity, min_intensity
+
+def plot_max_peak_vs_ac_r(folder_path, fps):
+    max_amps = []
+    ac_voltages = []
+    freqs = []
+    for file in os.listdir(folder_path):
+        file_path = os.path.join(folder_path, file)
+        if not file.endswith('.csv'): continue
+        frequencies, amps = fft_r(file_path, fps, plot=True, save=False)
+        peak_signal_idx = np.argmax(amps)
+        max_amps.append(amps[peak_signal_idx])
+        freqs.append(frequencies[peak_signal_idx])
+        parts = file.split('_')
+        ac_voltages.append(float(parts[3])) # format - dc_{dc_value}_ac_{ac_value}_fps_{fps}.csv
+    data = zip(ac_voltages, max_amps, freqs)
+    data = sorted(data, key=lambda x: x[0])
+    ac_voltages, max_amps, freqs = zip(*data)
+    plt.scatter(ac_voltages, max_amps)
+    plt.xlabel('V_ac (V)')
+    plt.ylabel('Max Amplitude (V^2/Hz)')
+    plt.title('Max Amplitude vs V_ac')
+    plt.grid(True)
+    plt.legend()
+    plt.show()
+    plt.scatter(ac_voltages, freqs)
+    plt.xlabel('V_ac (V)')
+    plt.ylabel('Frequency (Hz)')
+    plt.title('Frequency vs V_ac')
+    plt.grid(True)
+    plt.legend()
+    plt.show()

@@ -117,11 +117,6 @@ def plot_r_vs_z_dual(file_path, fps,tracking_ids=[0, 1]):
     plt.grid(True, linestyle='--', alpha=0.5)
     plt.show()
 
-def plot_all_fft_averages():
-    data_dir = vdc_dir2
-    avarage_all(data_dir, fft_z, bad_measurements, plot=True)
-    avarage_all(data_dir, fft_r, bad_measurements, plot=True)
-
 
 
 vac_dir1 = os.path.join('data', 'Changing Vac 0 Vdc')
@@ -141,8 +136,9 @@ if __name__ == "__main__":
     #     plot_r_vs_z_dual(file_path, 50)
 
 
-    for file in sorted(os.listdir(dir)):
-        if not file.endswith('.csv'):
-            continue
-        file_path = os.path.join(dir, file)
-        fft_both_particles_r(file_path, fps=50, plot=True, save=False)
+    # for file in sorted(os.listdir(dir)):
+    #     if not file.endswith('.csv'):
+    #         continue
+    #     file_path = os.path.join(dir, file)
+    #     fft_both_particles_r(file_path, fps=50, plot=True, save=False)
+    plot_max_peak_vs_ac_r(dir_12_1, fps=50)
