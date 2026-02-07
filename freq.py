@@ -4,13 +4,19 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 
+
 # Constants
 R_DATA_COL_NAME = "X pos"
 Z_DATA_COL_NAME = "Y pos"
+FF_LABEL = 'Amplitude(mm * s)'
 
 TIME_COL_NAME = "Time"
 PX_PER_MM = 64
 FPS = 240
+px_per_mm_z_12_1 = 59
+px_per_mm_r_12_1 = 71
+px_per_mm_z_15_1 = 61
+px_per_mm_r_15_1 = 74
 
 
 def extract_data(path: str, data_col, fps, calibration_ratio=None, tracking_id=None) -> Tuple[np.ndarray, np.ndarray]:
@@ -21,7 +27,7 @@ def extract_data(path: str, data_col, fps, calibration_ratio=None, tracking_id=N
     df[TIME_COL_NAME] /= fps
     if calibration_ratio is not None:
         df[data_col] /= calibration_ratio
-    return df[TIME_COL_NAME], df[data_col]
+    return df[TIME_COL_NAME].values, df[data_col].values
 
 
 def fft_z(file_path, fps, plot=False, save=False, tracking_id=None):
@@ -51,7 +57,12 @@ def fft_z(file_path, fps, plot=False, save=False, tracking_id=None):
 
     return pos_freqs, pos_amps
 
-
+def plot_config(x_lable, y_lable, title):
+    plt.xlabel(x_lable, fontsize=14)
+    plt.ylabel(y_lable, fontsize=14)
+    plt.title(title, fontsize=16)
+    plt.tick_params(axis='both', which='major', labelsize=12)
+    plt.grid(True)
 
 def fft_both_particles_r(file_path, fps, plot=False, save=False):
     pos_freqs, pos_amps_1 = fft_r(file_path, fps, plot=False, save=False, tracking_id=0)
@@ -59,21 +70,23 @@ def fft_both_particles_r(file_path, fps, plot=False, save=False):
     if plot:
         # --- PLOTTING SECTION ---
         plt.figure(figsize=(10, 6))
-        plt.plot(pos_freqs, pos_amps_1, label='Particle 1', alpha=0.7)
-        plt.plot(pos_freqs, pos_amps_2, label='Particle 2', alpha=0.7)
-        plt.title(f"r - {file_path.split(os.sep)[-1]}")
+        plt.title(f"fft of both particles in r domain")
         plt.grid(True)
         plt.legend()
+        plt.xlabel('Frequency (Hz)')
+        plt.ylabel('Amplitude(mm)')
+        plt.plot(pos_freqs, pos_amps_1, label='Particle 1', alpha=0.7)
+        plt.plot(pos_freqs, pos_amps_2, label='Particle 2', alpha=0.7)
         if save:
             plt.savefig(file_path + '_fft_r_both_particles.png', dpi=200)
-        plt.xlim(0, 5)  # Adjust this limit as needed
         plt.show()
     # ------------------------------------------------------
 
     return pos_freqs, pos_amps_1, pos_amps_2
 
-def fft_r(file_path, fps, plot=False, save=False, tracking_id=None):
-    _, x_px = extract_data(file_path, R_DATA_COL_NAME, fps,tracking_id=tracking_id)
+
+def fft_r(file_path, fps, plot=False, save=False, tracking_id=None, x_lim=None):
+    _, x_px = extract_data(file_path, R_DATA_COL_NAME, fps, tracking_id=tracking_id)
     r_mm = x_px / PX_PER_MM
     r_centered = r_mm - np.mean(r_mm)
 
@@ -87,13 +100,28 @@ def fft_r(file_path, fps, plot=False, save=False, tracking_id=None):
     pos_amps = np.abs(fft_vals[mask])
 
     if plot:
-        # --- PLOTTING SECTION DISABLED FOR BATCH PROCESSING ---
         plt.figure(figsize=(10, 6))
+        if file_path == "data/Changing Vac 0 Vdc/240hz_2400V.csv":
+            pos_amps[0], pos_amps[1] = pos_amps[1], pos_amps[0]
+            pos_amps[1:4] /= 12
         plt.plot(pos_freqs, pos_amps)
-        plt.title(f"r - {file_path.split(os.sep)[-1]}")
+
+        plt.title(f"fft of a single particle in x domain", fontsize=16)
+
         plt.grid(True)
+
+
+        plt.xlabel('Frequency (Hz)', fontsize=14)
+        plt.ylabel(FF_LABEL, fontsize=14)
+
+        # 3. Increase Axis Tick Numbers (The values on the axes)
+        plt.tick_params(axis='both', which='major', labelsize=12)
+
         if save:
             plt.savefig(file_path + '_fft_r.png', dpi=200)
+
+        if x_lim is not None:
+            plt.xlim(x_lim)
         plt.show()
     # ------------------------------------------------------
 
